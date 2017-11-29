@@ -14,13 +14,18 @@ class PCA(object):
         self.percentage = per
         self.number_into_count = nic
 
+        self.eigen = None
+        self.vector = None
+
     def svd(self):
         cov = self.cov()  # or directly from mat like sklearn
         U, sigma, VT = np.linalg.svd(cov)
         eigen_sorted = np.argsort(sigma)
+        self.eigen = np.sqrt(sigma)
         print(np.sqrt(sigma))
         if self.number_into_count is not None:
             eigen_vector = U[:, eigen_sorted[:-self.number_into_count - 1:-1]]
+            self.vector = eigen_vector
             return eigen_vector
 
     def normalize(self):
@@ -33,7 +38,7 @@ class PCA(object):
     def fit(self):
         vector = self.svd()
         print(vector)
-        return np.dot(self.normalize(), vector)
+        return np.dot(self.normalize(), vector), self.eigen, vector
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
 from sklearn import decomposition
 import numpy as np
 
-pca = decomposition.PCA(2)
+pca = decomposition.PCA(2, whiten=False)
+# pca = decomposition.PCA(2, whiten=True)
 data = np.array([[5, 0, 1],
                  [0, 1, 1],
                  [1, 0, 1],
