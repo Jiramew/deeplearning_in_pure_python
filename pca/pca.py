@@ -15,25 +15,25 @@ class PCA(object):
         self.number_into_count = nic
 
     def svd(self):
-        cov = self.cov()
+        cov = self.cov()  # or directly from mat like sklearn
         U, sigma, VT = np.linalg.svd(cov)
         eigen_sorted = np.argsort(sigma)
-        # print(sigma)
+        print(np.sqrt(sigma))
         if self.number_into_count is not None:
             eigen_vector = U[:, eigen_sorted[:-self.number_into_count - 1:-1]]
             return eigen_vector
 
     def normalize(self):
-        return self.mat - np.tile(np.mean(self.mat, 1), (self.input_dim, 1)).T
+        return self.mat - np.mean(self.mat, 0)
 
     def cov(self):
         mat_pre = self.normalize()
-        return np.dot(mat_pre, mat_pre.T) / (self.input_dim - 1)
+        return np.dot(mat_pre.T, mat_pre) / (self.input_dim - 1)
 
     def fit(self):
         vector = self.svd()
         print(vector)
-        return np.dot(self.normalize().T, vector)
+        return np.dot(self.normalize(), vector)
 
 
 if __name__ == '__main__':
@@ -46,5 +46,5 @@ if __name__ == '__main__':
                      [2, 3, 4],
                      [0, 0, 1]])
 
-    pca = PCA(data.T)
+    pca = PCA(data)
     print(pca.fit())
