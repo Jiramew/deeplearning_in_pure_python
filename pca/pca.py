@@ -4,7 +4,7 @@ import numpy as np
 class PCA(object):
     def __init__(self,
                  mat,
-                 per=0.85,
+                 per=0.85,  # TODO
                  nic=2):
         self.mat = mat
         self.input_dim = self.mat.shape[

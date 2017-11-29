@@ -31,12 +31,16 @@ class MultilayerNN(object):
 
     def init_weight(self):
         weight = []
-        weight_input_to_hidden_first = 2 * np.random.random((self.input_dim, self.hidden_layer_config[0])) - 1
+        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
+        weight_input_to_hidden_first = 2 * np.random.random(
+            (self.input_dim, self.hidden_layer_config[0])) * bound - bound
         weight.append(weight_input_to_hidden_first)
         for i in range(self.hidden_layer_num - 1):
-            tmp_weight = 2 * np.random.random((self.hidden_layer_config[i], self.hidden_layer_config[i + 1])) - 1
+            tmp_weight = 2 * np.random.random(
+                (self.hidden_layer_config[i], self.hidden_layer_config[i + 1])) * bound - bound
             weight.append(tmp_weight)
-        weight_hidden_last_to_output = 2 * np.random.random((self.hidden_layer_config[-1], self.output_dim)) - 1
+        weight_hidden_last_to_output = 2 * np.random.random(
+            (self.hidden_layer_config[-1], self.output_dim)) * bound - bound
         weight.append(weight_hidden_last_to_output)
 
         weight_update = [np.zeros_like(w) for w in weight]
@@ -44,9 +48,10 @@ class MultilayerNN(object):
         return weight, weight_update
 
     def init_bias(self):
-        bias = [2 * np.random.random((1, hidden_layer_node_num)) - 1 for hidden_layer_node_num in
+        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
+        bias = [2 * np.random.random((1, hidden_layer_node_num)) * bound - bound for hidden_layer_node_num in
                 self.hidden_layer_config]
-        bias.append(2 * np.random.random((1, self.output_dim)) - 1)
+        bias.append(2 * np.random.random((1, self.output_dim)) * bound - bound)
 
         bias_update = [np.zeros_like(b) for b in bias]
         return bias, bias_update
@@ -125,5 +130,7 @@ if __name__ == '__main__':
     reg = 0.1
     nn = MultilayerNN([6, 6], data, label, alpha, reg)
     nn.train()
+    print(nn.weight_list)
+    print(nn.bias_list)
     print(nn.predict(test))
     a = 1
