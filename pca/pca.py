@@ -21,7 +21,7 @@ class PCA(object):
         cov = self.cov()  # or directly from mat like sklearn
         U, sigma, VT = np.linalg.svd(cov)
         eigen_sorted = np.argsort(sigma)
-        self.eigen = np.sqrt(sigma)
+        self.eigen = sigma
         print(np.sqrt(sigma))
         if self.number_into_count is not None:
             eigen_vector = U[:, eigen_sorted[:-self.number_into_count - 1:-1]]
