@@ -3,6 +3,7 @@ from util.util import sigmoid_derivative, sigmoid, kl_divergence
 import scipy.io
 import scipy.optimize
 from util import visual
+import pickle
 
 
 class AutoencoderLinear(object):
@@ -89,6 +90,15 @@ if __name__ == '__main__':
     output_size = input_dim
     hidden_size = 400
 
+    with open('./params.pickle', 'rb') as f:
+        opt_theta = pickle.load(f)
+        zca_white = pickle.load(f)
+        patch_mean = pickle.load(f)
+
+    W = opt_theta[0: hidden_size * input_dim].reshape(input_dim, hidden_size)
+    b = opt_theta[2 * hidden_size * input_dim:2 * hidden_size * input_dim + hidden_size]
+    visual.displayColorNetwork(W.transpose().dot(zca_white).transpose())
+
     patches = scipy.io.loadmat("../data/stlSampledPatches")['patches']
     # show patches
     #  visual.displayColorNetwork(patches[:, 0:100])
@@ -109,13 +119,14 @@ if __name__ == '__main__':
                                 sparsity=0.035,
                                 weight_decay=3e-3,
                                 penalty=5)
-    options = {'maxiter': 400, 'disp': True}
+    options = {'maxiter': 500, 'disp': True}
     J = lambda x: encoder.cost(x)
     # get w and b from BFGS
     result = scipy.optimize.minimize(J, encoder.theta, method='L-BFGS-B',
                                      jac=True, options=options)
     opt_theta = result.x
 
-    W = opt_theta[0: hidden_size * input_dim].reshape(hidden_size, input_dim)
-    b = opt_theta[2 * hidden_size * input_dim:2 * hidden_size * input_dim + hidden_size]
-    visual.displayColorNetwork(W.dot(ZCA_white).transpose())
+    with open('./params.pickle', 'wb') as f:
+        pickle.dump(opt_theta, f)
+        pickle.dump(ZCA_white, f)
+        pickle.dump(patch_mean, f)
