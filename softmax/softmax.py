@@ -6,9 +6,9 @@ class Softmax(object):
                  train_data,
                  train_label,
                  lr=0.00001,
-                 wd=1,
-                 turn=100000):
-        self.train_data = train_data
+                 wd=0.1,
+                 turn=100):
+        self.train_data = np.insert(train_data, 0, np.ones(train_data.shape[0]), 1)
         self.train_label = train_label
         self.input_dim = self.train_data.shape[
             1]  # number of nodes in input unit(train data) not including bias node aka. the dimension of train data.
@@ -21,8 +21,8 @@ class Softmax(object):
         self.turn = turn
 
     def output(self):
-        return np.array([np.exp(np.dot(self.train_data[i], self.theta)) / np.sum(
-            np.exp(np.dot(self.train_data[i], self.theta)), axis=0) for i in range(self.input_num)])
+        return (np.exp(np.dot(self.train_data, self.theta)).T / np.sum(
+            np.exp(np.dot(self.train_data, self.theta)), axis=1)).T
 
     def theta_init(self):
         return np.zeros((self.input_dim, self.output_dim))
@@ -35,11 +35,12 @@ class Softmax(object):
             self.theta += self.learning_rate * (
                 np.dot(self.train_data.T, loss) / self.input_num - self.weight_decay * self.theta)
 
-            if (i % 1000) == 0:
-                print(np.mean(np.abs(loss)))
+            # if (i % 1000) == 0:
+            print(np.mean(np.abs(loss)))
 
     def predict(self, test_data):
-        return np.exp(np.dot(test_data, self.theta)) / np.sum(np.exp(np.dot(test_data, self.theta)), axis=0)
+        test_data = np.insert(test_data, test_data.shape[1], np.ones(test_data.shape[0]), 1)
+        return (np.exp(np.dot(test_data, self.theta)).T / np.sum(np.exp(np.dot(test_data, self.theta)), axis=1)).T
 
 
 def mnist_test():
