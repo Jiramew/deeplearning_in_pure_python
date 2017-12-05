@@ -54,6 +54,10 @@ if __name__ == '__main__':
     from util.mnist import mnist_train_data, mnist_train_label
 
 
+    def image_to_binary(mat):
+        return np.where(mat > 0, 1, 0)
+
+
     def label_to_one_hot(label):
         label_set = [i for i in range(10)]
         num = len(label)
@@ -75,8 +79,8 @@ if __name__ == '__main__':
 
 
     for i in range(10):
-        for j in range(100):
-            train_data = mnist_train_data
+        for j in range(60000 // 32):
+            train_data = image_to_binary(mnist_train_data)
             train_label = label_to_one_hot(mnist_train_label)
 
             input_tensor = train_data[j * 32:(j + 1) * 32].reshape(-1, 1, 28, 28)
@@ -84,5 +88,6 @@ if __name__ == '__main__':
 
             input_tensor = input_tensor.reshape([-1, 1, 28, 28])
             cnn.train(input_tensor, label_tensor)
+
             if j % 10 == 0:
                 print(cnn.loss(), cnn.accuracy())

@@ -43,6 +43,7 @@ class MaxpoolLayer(Layer):
                                                           self.input_channel,
                                                           self.row_length,
                                                           self.col_length)
+        # for each batch independently
         return self.output
 
     def backward(self, loss):

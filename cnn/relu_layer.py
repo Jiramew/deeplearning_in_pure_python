@@ -8,10 +8,9 @@ class ReluLayer(Layer):
 
     def forward(self, input_data):
         self.output = input_data
-        self.output = np.maximum(self.output, 0)
-        return self.output
+        return np.maximum(self.output, 0)
 
     def backward(self, loss):
-        loss = loss.reshape(self.output.shape[0], -1)
+        loss = loss.reshape(self.output.shape)
         loss = np.where(self.output > 0, loss, 0)
         return loss, []

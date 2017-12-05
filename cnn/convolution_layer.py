@@ -36,12 +36,13 @@ class ConvolutionLayer(Layer):
     def padding(input_data, kernel_size, stride, t="c"):
         batch_size, input_channel, input_row, input_col = input_data.shape
         row_length = math.ceil(input_row / stride[0])
-        col_index = math.ceil(input_col / stride[1])
+        col_length = math.ceil(input_col / stride[1])
         pad = [kernel_size[0] + (row_length - 1) * stride[0] - input_row,
-               kernel_size[1] + (col_index - 1) * stride[1] - input_col]
+               kernel_size[1] + (col_length - 1) * stride[1] - input_col]
 
         pad_down = math.ceil(pad[0] / 2)
         pad_up = pad[0] - pad_down
+
         pad_right = math.ceil(pad[1] / 2)
         pad_left = pad[1] - pad_right
 
@@ -54,7 +55,7 @@ class ConvolutionLayer(Layer):
                                 (pad_left, pad_right)),
                                'constant',
                                constant_values=pad_value)
-        return row_length, row_length, padded_output
+        return row_length, col_length, padded_output
 
     @staticmethod
     def image_convolve(input_data, kernel_size, stride, row_length, col_length):
@@ -85,7 +86,7 @@ class ConvolutionLayer(Layer):
                         self.kernel_row * 2 + input_data.shape[2] - 2,
                         self.kernel_col * 2 + input_data.shape[3] - 2]
         padded_loss = np.zeros(padded_shape)
-        padded_loss[:, :, self.kernel_col - 1:self.kernel_col + input_data.shape[2] - 1,
+        padded_loss[:, :, self.kernel_row - 1:self.kernel_row + input_data.shape[2] - 1,
         self.kernel_col - 1:self.kernel_col + input_data.shape[3] - 1] = input_data
         return padded_loss
 
@@ -106,7 +107,6 @@ class ConvolutionLayer(Layer):
         return output
 
     def rotate(self, input_data):
-
         rot_w = np.zeros_like(input_data)
         k = np.array([range(self.kernel_row - 1, -1, -1)]).T
         n = np.array([range(self.kernel_col - 1, -1, -1)])
@@ -138,13 +138,15 @@ class ConvolutionLayer(Layer):
         loss = loss.reshape((self.batch_size, self.output_channel, self.row_length, self.col_length))
         loss_row_length = loss.shape[2]
         loss_col_length = loss.shape[3]
+        loss_padded_shape = [loss_row_length + (loss_row_length - 1) * (self.stride[0] - 1),
+                             loss_col_length + (loss_col_length - 1) * (self.stride[1] - 1)]
         loss_padded_init = np.zeros(
             [self.batch_size,
              self.output_channel,
-             loss_row_length + (loss_row_length - 1) * (self.stride[0] - 1),
-             loss_col_length + (loss_col_length - 1) * (self.stride[1] - 1)])
-        row = np.array([range(0, loss_row_length, self.stride[0])]).transpose()
-        col = np.array([range(0, loss_col_length, self.stride[1])])
+             loss_padded_shape[0],
+             loss_padded_shape[1]])
+        row = np.array([range(0, loss_padded_shape[0], self.stride[0])]).transpose()
+        col = np.array([range(0, loss_padded_shape[1], self.stride[1])])
         loss_padded_init[:, :, row, col] = loss
         loss_padded = self.padded(loss_padded_init)
 
@@ -157,7 +159,7 @@ class ConvolutionLayer(Layer):
                                               self.kernel_row,
                                               self.kernel_col)
         loss_padded_init = np.transpose(loss_padded_init, [0, 2, 3, 1]).reshape(
-            self.batch_size * loss_row_length * loss_col_length, -1)
+            self.batch_size * loss_padded_shape[0] * loss_padded_shape[1], -1)
         grad_weight = np.dot(grad_weight_col, loss_padded_init)
         grad_weight = grad_weight.reshape([self.input_channel, self.kernel_row, self.kernel_col, self.output_channel])
         grad_weight = grad_weight.transpose(0, 3, 1, 2)
