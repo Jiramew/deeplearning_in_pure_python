@@ -12,7 +12,7 @@ class FullConnectLayer(Layer):
         self.input_data = np.array([])
 
     def forward(self, input_data):
-        self.batch_size = input_data.size[0]
+        self.batch_size = input_data.shape[0]
         self.input_data = np.reshape(input_data, [self.batch_size, -1])
         self.output = np.dot(self.input_data, self.weight) + self.bias
         return self.output
