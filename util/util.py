@@ -18,6 +18,10 @@ def relu(x):
     return res
 
 
+def relu_derivative(value):
+    return np.where(value > 0, 1, 0)
+
+
 def uniform_random_array(a, b, *arg):
     np.random.seed(0)
     return np.random.rand(*arg) * (b - a) + a

@@ -5,8 +5,8 @@ class LinearRegression(object):
     def __init__(self,
                  train_data,
                  train_label,
-                 lr=0.01,
-                 turn=10000):
+                 lr=0.001,
+                 turn=50000):
         self.train_data = train_data
         self.train_label = train_label
         self.input_dim = self.train_data.shape[
@@ -19,7 +19,7 @@ class LinearRegression(object):
         self.theta, self.b = self.param_init()
 
     def param_init(self):
-        return np.zeros((1, self.input_dim)), np.zeros((1, self.output_dim))
+        return np.random.randn(1, self.input_dim), np.random.randn(1, self.output_dim)
 
     def train(self):
         for i in range(self.turn):

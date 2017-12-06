@@ -7,7 +7,7 @@ class Softmax(object):
                  train_label,
                  lr=0.25,
                  wd=0.01,
-                 turn=5000):
+                 turn=200):
         self.train_data = np.insert(train_data, 0, np.ones(train_data.shape[0]), 1)
         self.train_label = train_label
         self.input_dim = self.train_data.shape[
