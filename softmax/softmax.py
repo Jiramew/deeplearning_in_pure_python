@@ -50,28 +50,9 @@ class Softmax(object):
 
 
 def mnist_test():
-    from util.mnist import mnist_train_data, mnist_train_label, mnist_test_data, mnist_test_label
-
-    def image_to_binary(mat):
-        return np.where(mat > 0, 1, 0)
-
-    def label_to_one_hot(label):
-        label_set = [i for i in range(10)]
-        num = len(label)
-        one_hot_label = np.zeros([num, 10])
-        offset = []
-        index = []
-        for i, c in enumerate(label):
-            offset.append(i)
-            index.append(label_set.index(c))
-        one_hot_index = [offset, index]
-        one_hot_label[one_hot_index] = 1.0
-        return one_hot_label.astype(np.uint8)
-
-    def one_hot_to_label(label):
-        label_set = [i for i in range(10)]
-        label = np.array([[label_set[np.argmax(i)]] for i in label])
-        return label
+    from util.mnist import mnist_train_data, \
+        mnist_train_label, mnist_test_data, mnist_test_label, image_to_binary, \
+        label_to_one_hot, one_hot_to_label
 
     train_data = image_to_binary(mnist_train_data)
     train_label = label_to_one_hot(mnist_train_label)
