@@ -6,21 +6,21 @@ from rnn.get_data import getSentenceData
 class Rnn(object):  # recurrent_network
     def __init__(self,
                  input_dim,
-                 hidden_dim,
+                 hidden_dim=100,
                  truncate=4,
                  lr=0.01):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.truncate = truncate
         self.state = [np.zeros((self.hidden_dim, 1))]
-        self.U = np.random.uniform(-np.sqrt(1.0 / self.input_dim),
-                                   np.sqrt(1.0 / self.input_dim),
+        self.U = np.random.uniform(-np.sqrt(1. / self.input_dim),
+                                   np.sqrt(1. / self.input_dim),
                                    (self.hidden_dim, self.input_dim))  # with input
-        self.W = np.random.uniform(-np.sqrt(1.0 / self.hidden_dim),
-                                   np.sqrt(1.0 / self.hidden_dim),
+        self.W = np.random.uniform(-np.sqrt(1. / self.hidden_dim),
+                                   np.sqrt(1. / self.hidden_dim),
                                    (self.hidden_dim, self.hidden_dim))  # with state(t-1)
-        self.V = np.random.uniform(-np.sqrt(1.0 / self.hidden_dim),
-                                   np.sqrt(1.0 / self.hidden_dim),
+        self.V = np.random.uniform(-np.sqrt(1. / self.hidden_dim),
+                                   np.sqrt(1. / self.hidden_dim),
                                    (self.input_dim, self.hidden_dim))  # with state(t)
 
         self.learning_rate = lr
@@ -82,9 +82,10 @@ class Rnn(object):  # recurrent_network
     def train(self, input_data, input_label, learning_rate=0.005, epoch_num=100):
         loss_list = []
         for epoch in range(epoch_num):
-            loss = self.loss(input_data, input_label)
-            loss_list.append(loss)
-            print(loss)
+            if epoch % 1 == 0:
+                loss = self.loss(input_data, input_label)
+                loss_list.append(loss)
+                print(loss)
 
             for i in range(len(input_label)):
                 self.stochastic_gradient_decent(input_data[i], input_label[i], learning_rate)
@@ -111,4 +112,4 @@ if __name__ == '__main__':
     print("Expected Loss for random predictions: %f" % np.log(word_dim))
     print("Actual loss: %f" % model.loss(X_train[:1000], Y_train[:1000]))
 
-    loss = model.train(X_train[:100], Y_train[:100])
+    loss = model.train(X_train[:100], Y_train[:100], learning_rate=0.005, epoch_num=10)

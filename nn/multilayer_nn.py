@@ -1,136 +1,132 @@
+import json
+import time
 import numpy as np
-from util.util import sigmoid_derivative, sigmoid
+from nn.full_connect_layer import FullConnectLayer
+from nn.softmax_layer import SoftmaxLayer
 
 
 class MultilayerNN(object):
-    def __init__(self,
-                 hlc,
-                 train_data,
-                 train_label,
-                 lr=0.1,
-                 rg=0.,
-                 turn=10000):
-        np.random.seed(0)
-        self.train_data = train_data
-        self.train_label = train_label
-        self.hidden_layer_config = hlc  # [100,100,100,100] each number denotes the num of hidden nodes
-        self.hidden_layer_num = len(hlc)  # number of hidden layer
-        self.all_layer_num = self.hidden_layer_num + 2
-        self.turn = turn
-        self.input_dim = self.train_data.shape[
-            1]  # number of nodes in input unit(train data) not including bias node aka. the dimension of train data.
-        self.input_num = self.train_data.shape[0]  # number of instance
-        self.output_dim = train_label.shape[1]  # output dim
-        self.learning_rate = lr
-        self.regularization = rg
-        self.weight_list, self.weight_list_update = self.init_weight()  # init the weight
-        self.bias_list, self.bias_list_update = self.init_bias()
-        self.z_list = []
-        self.a_list = []
-        self.loss_list = []
+    def __init__(self):
+        self.layers = []
+        self.grad = []
+        self.label = None
+        self.output = None
 
-    def init_weight(self):
-        weight = []
-        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
-        weight_input_to_hidden_first = 2 * np.random.random(
-            (self.input_dim, self.hidden_layer_config[0])) * bound - bound
-        weight.append(weight_input_to_hidden_first)
-        for i in range(self.hidden_layer_num - 1):
-            tmp_weight = 2 * np.random.random(
-                (self.hidden_layer_config[i], self.hidden_layer_config[i + 1])) * bound - bound
-            weight.append(tmp_weight)
-        weight_hidden_last_to_output = 2 * np.random.random(
-            (self.hidden_layer_config[-1], self.output_dim)) * bound - bound
-        weight.append(weight_hidden_last_to_output)
+    def add(self, layer):
+        self.layers.append(layer)
 
-        weight_update = [np.zeros_like(w) for w in weight]
+    def forward_propagation(self, input_data):
+        data = input_data.copy()
+        for layer in self.layers:
+            data = layer.forward(data)
+        return data
 
-        return weight, weight_update
+    def back_propagation(self, output, label):
+        loss = output - label
+        for layer in reversed(self.layers):
+            loss, grad = layer.backward(loss)
+            self.grad.append(grad)
 
-    def init_bias(self):
-        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
-        bias = [2 * np.random.random((1, hidden_layer_node_num)) * bound - bound for hidden_layer_node_num in
-                self.hidden_layer_config]
-        bias.append(2 * np.random.random((1, self.output_dim)) * bound - bound)
+    def train(self, input_data, input_label):
+        self.label = input_label
+        self.output = self.forward_propagation(input_data)
+        self.back_propagation(self.output, self.label)
 
-        bias_update = [np.zeros_like(b) for b in bias]
-        return bias, bias_update
+    def predict(self, input_data):
+        return self.forward_propagation(input_data)
 
-    def forward_propagation(self, index):
-        self.z_list = [""] * self.all_layer_num
-        self.a_list = [""] * self.all_layer_num
-        for i in range(self.all_layer_num):
-            if i == 0:
-                self.z_list[i] = self.train_data[index]
-                self.a_list[i] = self.train_data[index]
-            else:
-                tmp_z = np.dot(self.a_list[i - 1], self.weight_list[i - 1]) + self.bias_list[i - 1]
-                self.z_list[i] = tmp_z
-                self.a_list[i] = sigmoid(tmp_z)
+    def loss(self):
+        return -np.sum(self.label * np.log(self.output)) / self.label.shape[0]
 
-    def back_propagation(self, index):
-        self.loss_list = [""] * self.all_layer_num
-        self.loss_list[self.all_layer_num - 1] = -1.0 * (
-            self.train_label[index] - self.a_list[-1]) * sigmoid_derivative(
-            self.a_list[-1])
-        for i in range(self.all_layer_num - 2, 0, -1):
-            self.loss_list[i] = np.dot(self.loss_list[i + 1], self.weight_list[i].T) * sigmoid_derivative(
-                self.a_list[i])
+    def accuracy(self):
+        return np.mean(np.equal(np.argmax(self.output, axis=1), np.argmax(self.label, axis=1)))
 
-        for j in range(self.all_layer_num - 1):
-            tmp_a_row = self.a_list[j].T
-            tmp_a_column = tmp_a_row.reshape(len(tmp_a_row), 1)
-            self.weight_list_update[j] += np.dot(tmp_a_column, self.loss_list[j + 1])
-            self.bias_list_update[j] += self.loss_list[j + 1]
+    def save_model_as_json(self, prefix="model-"):
+        model = {
+            "fc_layers": [],
+            "sm_layers": []
+        }
+        for layer in self.layers:
+            if layer.layer_type == 'fc':
+                fc_current_layer_info = {
+                    'bias': layer.bias.tolist(),
+                    'weight': layer.weight.tolist(),
+                    'learning_rate': layer.learning_rate,
+                    'batch_size': layer.batch_size,
+                    'layer_type': layer.layer_type,
+                }
+                model["fc_layers"].append(fc_current_layer_info)
+            if layer.layer_type == 'sm':
+                sm_current_layer_info = {
+                    'layer_type': layer.layer_type,
+                }
+                model["sm_layers"] = sm_current_layer_info
+        model_json = json.dumps(model)
+        with open('./' + prefix + str(int(time.time())) + '.model', 'a') as f:
+            f.write(model_json)
 
-    def update_weight_and_bias(self):
-        for i in range(self.all_layer_num - 1):
-            self.weight_list[i] -= self.learning_rate * (
-                self.weight_list_update[i] / self.input_num + self.regularization * self.weight_list[i])
-            self.bias_list[i] -= self.learning_rate * self.bias_list_update[i] / self.input_num
+        return model_json
 
-    def train(self):
-        for i in range(self.turn):
-            for j in range(self.input_num):
-                self.forward_propagation(j)
-                self.back_propagation(j)
-            self.update_weight_and_bias()
+    def load_model_from_json(self, file):
+        with open(file, 'r') as f:
+            model_json = json.loads(f.read())
 
-            if (i % 1000) == 0:
-                print(np.mean(np.abs(self.loss_list[-1])))
+        for fc in model_json['fc_layers']:
+            bias = np.array(fc['bias'])
+            weight = np.array(fc['weight'])
+            learning_rate = fc['learning_rate']
 
-    def predict(self, test_data):
-        result = test_data
-        for i in range(self.all_layer_num - 1):
-            result = sigmoid(np.dot(result, self.weight_list[i]) + self.bias_list[i])
-        return result
+            current_fc = FullConnectLayer(np.array(model_json['fc_layers'][0]['weight']).shape)
+            current_fc.set_param(weight, bias, learning_rate)
+
+            self.add(current_fc)
+        for _ in model_json['sm_layers']:
+            self.add(SoftmaxLayer())
+
+
+def train():
+    mnn = MultilayerNN()
+    mnn.add(FullConnectLayer([784, 50]))
+    mnn.add(FullConnectLayer([50, 10], 0.01))
+    mnn.add(SoftmaxLayer())
+
+    from util.mnist import mnist_train_data, \
+        mnist_train_label, image_to_binary, \
+        label_to_one_hot
+
+    for i in range(10):
+        for j in range(60000 // 32):
+            train_data = image_to_binary(mnist_train_data)
+            train_label = label_to_one_hot(mnist_train_label)
+
+            input_tensor = train_data[j * 32:(j + 1) * 32].reshape(-1, 1, 28, 28)
+            label_tensor = train_label[j * 32:(j + 1) * 32]
+
+            input_tensor = input_tensor.reshape([-1, 1, 28, 28])
+            mnn.train(input_tensor, label_tensor)
+
+            if j % 10 == 0:
+                print(mnn.loss(), mnn.accuracy())
+            if j % 100 == 0:
+                mnn.save_model_as_json()
+
+
+def test():
+    mnn = MultilayerNN()
+    mnn.load_model_from_json("./model-1513582267.model")
+
+    from util.mnist import mnist_test_data, mnist_test_label, image_to_binary, \
+        label_to_one_hot
+
+    test_data = image_to_binary(mnist_test_data)
+    test_label = label_to_one_hot(mnist_test_label)
+
+    pred = mnn.predict(test_data)
+    accuracy = np.mean(np.equal(np.argmax(pred, axis=1), np.argmax(test_label, axis=1)))
+
+    print(accuracy)
 
 
 if __name__ == '__main__':
-    data = np.array([[0, 0, 1],
-                     [0, 1, 1],
-                     [1, 0, 1],
-                     [1, 1, 1],
-                     [0, 0, 1],
-                     [1, 2, 1],
-                     [2, 3, 4],
-                     [0, 0, 1]])
-
-    label = np.array([[0],
-                      [1],
-                      [1],
-                      [1],
-                      [0],
-                      [1],
-                      [1],
-                      [0]])
-
-    test = np.array([[0, 0, 1]])
-    alpha = 0.2
-    reg = 0.1
-    nn = MultilayerNN([6, 6], data, label, alpha, reg)
-    nn.train()
-    print(nn.weight_list)
-    print(nn.bias_list)
-    print(nn.predict(test))
-    a = 1
+    # train()
+    test()
