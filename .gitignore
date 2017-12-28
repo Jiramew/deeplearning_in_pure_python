@@ -1,0 +1,9 @@
+.idea/
+data/
+*.pyc
+*.log
+.pypirc
+.mat
+.pickle
+.model
+.gz

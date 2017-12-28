@@ -1,0 +1,136 @@
+import numpy as np
+from util.util import sigmoid_derivative, sigmoid
+
+
+class MultilayerNN(object):
+    def __init__(self,
+                 hlc,
+                 train_data,
+                 train_label,
+                 lr=0.1,
+                 rg=0.,
+                 turn=10000):
+        np.random.seed(0)
+        self.train_data = train_data
+        self.train_label = train_label
+        self.hidden_layer_config = hlc  # [100,100,100,100] each number denotes the num of hidden nodes
+        self.hidden_layer_num = len(hlc)  # number of hidden layer
+        self.all_layer_num = self.hidden_layer_num + 2
+        self.turn = turn
+        self.input_dim = self.train_data.shape[
+            1]  # number of nodes in input unit(train data) not including bias node aka. the dimension of train data.
+        self.input_num = self.train_data.shape[0]  # number of instance
+        self.output_dim = train_label.shape[1]  # output dim
+        self.learning_rate = lr
+        self.regularization = rg
+        self.weight_list, self.weight_list_update = self.init_weight()  # init the weight
+        self.bias_list, self.bias_list_update = self.init_bias()
+        self.z_list = []
+        self.a_list = []
+        self.loss_list = []
+
+    def init_weight(self):
+        weight = []
+        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
+        weight_input_to_hidden_first = 2 * np.random.random(
+            (self.input_dim, self.hidden_layer_config[0])) * bound - bound
+        weight.append(weight_input_to_hidden_first)
+        for i in range(self.hidden_layer_num - 1):
+            tmp_weight = 2 * np.random.random(
+                (self.hidden_layer_config[i], self.hidden_layer_config[i + 1])) * bound - bound
+            weight.append(tmp_weight)
+        weight_hidden_last_to_output = 2 * np.random.random(
+            (self.hidden_layer_config[-1], self.output_dim)) * bound - bound
+        weight.append(weight_hidden_last_to_output)
+
+        weight_update = [np.zeros_like(w) for w in weight]
+
+        return weight, weight_update
+
+    def init_bias(self):
+        bound = np.sqrt(2) / np.sqrt(self.output_dim + self.input_dim + 1)
+        bias = [2 * np.random.random((1, hidden_layer_node_num)) * bound - bound for hidden_layer_node_num in
+                self.hidden_layer_config]
+        bias.append(2 * np.random.random((1, self.output_dim)) * bound - bound)
+
+        bias_update = [np.zeros_like(b) for b in bias]
+        return bias, bias_update
+
+    def forward_propagation(self, index):
+        self.z_list = [""] * self.all_layer_num
+        self.a_list = [""] * self.all_layer_num
+        for i in range(self.all_layer_num):
+            if i == 0:
+                self.z_list[i] = self.train_data[index]
+                self.a_list[i] = self.train_data[index]
+            else:
+                tmp_z = np.dot(self.a_list[i - 1], self.weight_list[i - 1]) + self.bias_list[i - 1]
+                self.z_list[i] = tmp_z
+                self.a_list[i] = sigmoid(tmp_z)
+
+    def back_propagation(self, index):
+        self.loss_list = [""] * self.all_layer_num
+        self.loss_list[self.all_layer_num - 1] = -1.0 * (
+            self.train_label[index] - self.a_list[-1]) * sigmoid_derivative(
+            self.a_list[-1])
+        for i in range(self.all_layer_num - 2, 0, -1):
+            self.loss_list[i] = np.dot(self.loss_list[i + 1], self.weight_list[i].T) * sigmoid_derivative(
+                self.a_list[i])
+
+        for j in range(self.all_layer_num - 1):
+            tmp_a_row = self.a_list[j].T
+            tmp_a_column = tmp_a_row.reshape(len(tmp_a_row), 1)
+            self.weight_list_update[j] += np.dot(tmp_a_column, self.loss_list[j + 1])
+            self.bias_list_update[j] += self.loss_list[j + 1]
+
+    def update_weight_and_bias(self):
+        for i in range(self.all_layer_num - 1):
+            self.weight_list[i] -= self.learning_rate * (
+                self.weight_list_update[i] / self.input_num + self.regularization * self.weight_list[i])
+            self.bias_list[i] -= self.learning_rate * self.bias_list_update[i] / self.input_num
+
+    def train(self):
+        for i in range(self.turn):
+            for j in range(self.input_num):
+                self.forward_propagation(j)
+                self.back_propagation(j)
+            self.update_weight_and_bias()
+
+            if (i % 1000) == 0:
+                print(np.mean(np.abs(self.loss_list[-1])))
+
+    def predict(self, test_data):
+        result = test_data
+        for i in range(self.all_layer_num - 1):
+            result = sigmoid(np.dot(result, self.weight_list[i]) + self.bias_list[i])
+        return result
+
+
+if __name__ == '__main__':
+    data = np.array([[0, 0, 1],
+                     [0, 1, 1],
+                     [1, 0, 1],
+                     [1, 1, 1],
+                     [0, 0, 1],
+                     [1, 2, 1],
+                     [2, 3, 4],
+                     [0, 0, 1]])
+
+    label = np.array([[0, 1],
+                      [1, 0],
+                      [1, 0],
+                      [1, 0],
+                      [0, 1],
+                      [1, 0],
+                      [1, 0],
+                      [0, 1]])
+
+    test = np.array([[5, 2, 1]])
+    alpha = 0.2
+    reg = 0.1
+    nn = MultilayerNN([6, 6], data, label, alpha, reg)
+    nn.train()
+    print(nn.weight_list)
+    print(nn.bias_list)
+    print(nn.predict(test))
+    a = 1
