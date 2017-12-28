@@ -2,7 +2,7 @@ from sklearn import neural_network
 import numpy as np
 
 nn = neural_network.MLPClassifier(
-    hidden_layer_sizes=(784, 500, 100),
+    hidden_layer_sizes=(6, 6),
     activation="logistic",
     solver="sgd",
     alpha=0.1,

@@ -121,7 +121,7 @@ def train():
 
 def train_from_exist():
     mnn = MultilayerNN()
-    mnn.load_model_from_json("./model-1514368830.model")
+    mnn.load_model_from_json("./model-1513582360.model")
 
     from util.mnist import mnist_train_data, \
         mnist_train_label, image_to_binary, \
@@ -147,6 +147,7 @@ def train_from_exist():
                 pred = mnn.predict(test_data)
                 accuracy = np.mean(np.equal(np.argmax(pred, axis=1), np.argmax(test_label, axis=1)))
                 print(mnn.loss(), mnn.accuracy(), accuracy)
+
             if j % 100 == 0:
                 mnn.save_model_as_json()
 
