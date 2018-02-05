@@ -1,0 +1,20 @@
+LAYER_TYPE_CONV = 'convLayer'
+LAYER_TYPE_MAX_POOL = 'maxPoolLayer'
+LAYER_TYPE_INPUT_IMAGE = 'inputImageLayer'
+LAYER_TYPE_INPUT = 'inputLayer'
+LAYER_TYPE_FULLY_CONNECTED = 'FCLayer'
+
+ACTIVATION_RELU = 'relu'
+ACTIVATION_TANH = 'tanh'
+ACTIVATION_LINEAR = 'linear'
+ACTIVATION_SOFTMAX = 'softmax'
+ACTIVATION_NONE = None
+
+INIT_ZEROS = 'initZeros'
+INIT_XAVIER = 'xavier'
+INIT_GLOROT_UNIFORM = 'glorot_uniform'
+
+FORWARD_MODE_TRAINING = 'training'
+FORWARD_MODE_EVALUATE = 'evaluate'
+BACKWARD_MODE_TRAINING = 'training'
+BACKWARD_MODE_DREAMING = 'dreaming'

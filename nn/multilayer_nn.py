@@ -65,7 +65,7 @@ class MultilayerNN(object):
         with open('./' + prefix + str(int(time.time())) + '.model', 'a') as f:
             f.write(model_json)
 
-        return model_json
+        del model, model_json
 
     def load_model_from_json(self, file):
         with open(file, 'r') as f:
